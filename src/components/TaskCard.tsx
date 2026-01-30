@@ -50,6 +50,7 @@ export default function TaskCard({ task, done, skipped, onToggle }: Props) {
   }
 
   const gradient = colourForId(task.id);
+  const isWeekly = task.frequency === 'weekly';
 
   return (
     <button
@@ -59,9 +60,17 @@ export default function TaskCard({ task, done, skipped, onToggle }: Props) {
         relative w-full text-left rounded-3xl p-5 shadow-lg
         transition-all duration-300 active:scale-95
         ${done ? 'bg-gradient-to-br from-emerald-400 to-green-600 ring-4 ring-green-300/50' : `bg-gradient-to-br ${gradient}`}
+        ${isWeekly && !done ? 'animate-weekly-pulse' : ''}
         ${popping ? 'animate-pop' : ''}
       `}
     >
+      {/* Weekly badge */}
+      {isWeekly && (
+        <div className="absolute -top-2 -right-2 bg-indigo-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md z-10">
+          📅 Weekly
+        </div>
+      )}
+
       {/* Confetti burst on complete */}
       {popping && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -86,6 +95,9 @@ export default function TaskCard({ task, done, skipped, onToggle }: Props) {
             {task.title}
           </p>
           {done && <p className="text-sm text-white/80 font-medium">Nice one, Caleb! 💪</p>}
+          {isWeekly && !done && (
+            <p className="text-xs text-white/70 font-medium mt-0.5">Complete once this week</p>
+          )}
         </div>
         {!done && (
           <span className="text-white/60 text-3xl">○</span>

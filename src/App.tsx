@@ -15,9 +15,13 @@ export default function App() {
       <ParentView
         tasks={store.state.tasks}
         dailyTasks={store.dailyTasks}
+        weeklyTasks={store.weeklyTasks}
         bonusTasks={store.bonusTasks}
         currentWeek={store.state.currentWeek}
         todayProgress={store.todayProgress}
+        weekHistory={store.state.weekHistory || []}
+        bonusStars={store.state.bonusStars || 0}
+        currentStreak={store.currentStreak}
         onAddTask={store.addTask}
         onEditTask={store.editTask}
         onRemoveTask={store.removeTask}
@@ -44,10 +48,17 @@ export default function App() {
       <CalebView
         dailyTasks={store.dailyTasks}
         activeDailyTasks={store.activeDailyTasks}
+        weeklyTasks={store.weeklyTasks}
+        activeWeeklyTasks={store.activeWeeklyTasks}
         bonusTasks={store.bonusTasks}
         todayProgress={store.todayProgress}
+        weeklyCompletedTaskIds={store.state.currentWeek.weeklyCompletedTaskIds || []}
         completedCount={store.completedCount}
+        totalActiveCount={store.totalActiveCount}
         allDailyDone={store.allDailyDone}
+        bonusStars={store.state.bonusStars || 0}
+        todayBonusCompleted={store.todayBonusCompleted}
+        currentStreak={store.currentStreak}
         onToggleTask={store.toggleTask}
         onOpenParent={() => setShowPinLogin(true)}
       />

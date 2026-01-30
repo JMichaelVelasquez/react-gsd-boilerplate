@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import type { Task, WeekData, DayProgress } from '../types';
+import type { Task, WeekData, DayProgress, WeekHistory } from '../types';
 import { DAY_NAMES, weekDates, todayStr } from '../utils/dates';
 
 interface Props {
   tasks: Task[];
   dailyTasks: Task[];
+  weeklyTasks: Task[];
   bonusTasks: Task[];
   currentWeek: WeekData;
   todayProgress: DayProgress;
-  onAddTask: (title: string, emoji: string, isBonus: boolean) => void;
-  onEditTask: (id: string, updates: Partial<Pick<Task, 'title' | 'emoji' | 'isBonus'>>) => void;
+  weekHistory: WeekHistory[];
+  bonusStars: number;
+  currentStreak: number;
+  onAddTask: (title: string, emoji: string, isBonus: boolean, frequency: 'daily' | 'weekly') => void;
+  onEditTask: (id: string, updates: Partial<Pick<Task, 'title' | 'emoji' | 'isBonus' | 'frequency'>>) => void;
   onRemoveTask: (id: string) => void;
   onToggleSkip: (taskId: string, date?: string) => void;
   onResetWeek: () => void;
@@ -36,7 +40,11 @@ function TaskRow({
       <span className="text-2xl">{task.emoji}</span>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-gray-800 truncate">{task.title}</p>
-        <p className="text-xs text-gray-400">{task.isBonus ? '⭐ Bonus' : '📋 Daily'}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-gray-400">
+            {task.isBonus ? '⭐ Bonus' : task.frequency === 'weekly' ? '📅 Weekly' : '📋 Daily'}
+          </p>
+        </div>
       </div>
       <div className="flex items-center gap-1">
         <button
@@ -75,13 +83,14 @@ function TaskForm({
   onSubmit,
   onCancel,
 }: {
-  initial?: { title: string; emoji: string; isBonus: boolean };
-  onSubmit: (title: string, emoji: string, isBonus: boolean) => void;
+  initial?: { title: string; emoji: string; isBonus: boolean; frequency: 'daily' | 'weekly' };
+  onSubmit: (title: string, emoji: string, isBonus: boolean, frequency: 'daily' | 'weekly') => void;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [emoji, setEmoji] = useState(initial?.emoji ?? '📝');
   const [isBonus, setIsBonus] = useState(initial?.isBonus ?? false);
+  const [frequency, setFrequency] = useState<'daily' | 'weekly'>(initial?.frequency ?? 'daily');
 
   const EMOJI_PICKS = ['📚', '🔢', '✍️', '🏃', '🎨', '🎵', '🧹', '🧪', '💻', '📝', '🌍', '🎯'];
 
@@ -112,19 +121,56 @@ function TaskForm({
           ))}
         </div>
       </div>
+
+      {/* Frequency toggle */}
+      {!isBonus && (
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-2">Frequency</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setFrequency('daily')}
+              className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all ${
+                frequency === 'daily'
+                  ? 'bg-purple-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              📋 Daily
+              <span className="block text-xs opacity-70 mt-0.5">Resets each day</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFrequency('weekly')}
+              className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all ${
+                frequency === 'weekly'
+                  ? 'bg-indigo-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              📅 Weekly
+              <span className="block text-xs opacity-70 mt-0.5">Once per week</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       <label className="flex items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
           checked={isBonus}
-          onChange={(e) => setIsBonus(e.target.checked)}
+          onChange={(e) => {
+            setIsBonus(e.target.checked);
+            if (e.target.checked) setFrequency('daily');
+          }}
           className="w-5 h-5 rounded accent-purple-500"
         />
-        <span className="text-sm text-gray-700">⭐ Bonus task (optional extra)</span>
+        <span className="text-sm text-gray-700">⭐ Bonus task (optional extra, earns stars)</span>
       </label>
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => title.trim() && onSubmit(title.trim(), emoji, isBonus)}
+          onClick={() => title.trim() && onSubmit(title.trim(), emoji, isBonus, isBonus ? 'daily' : frequency)}
           disabled={!title.trim()}
           className="flex-1 py-2.5 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600
             disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -145,7 +191,7 @@ function TaskForm({
 
 // ── Weekly progress grid ────────────────────────────────────────
 
-function WeekGrid({ week, tasks }: { week: WeekData; tasks: Task[] }) {
+function WeekGrid({ week, dailyTasks, weeklyTasks }: { week: WeekData; dailyTasks: Task[]; weeklyTasks: Task[] }) {
   const today = todayStr();
   const dates = weekDates(week.weekStart);
 
@@ -166,7 +212,8 @@ function WeekGrid({ week, tasks }: { week: WeekData; tasks: Task[] }) {
           </tr>
         </thead>
         <tbody>
-          {tasks.map((task) => (
+          {/* Daily tasks */}
+          {dailyTasks.map((task) => (
             <tr key={task.id} className="border-t border-gray-100">
               <td className="py-2 pr-2 font-medium text-gray-700 whitespace-nowrap">
                 {task.emoji} {task.title}
@@ -191,8 +238,97 @@ function WeekGrid({ week, tasks }: { week: WeekData; tasks: Task[] }) {
               })}
             </tr>
           ))}
+          {/* Weekly tasks – show as a spanning row */}
+          {weeklyTasks.map((task) => {
+            const done = (week.weeklyCompletedTaskIds || []).includes(task.id);
+            return (
+              <tr key={task.id} className="border-t border-indigo-100 bg-indigo-50/50">
+                <td className="py-2 pr-2 font-medium text-indigo-700 whitespace-nowrap">
+                  {task.emoji} {task.title}
+                  <span className="ml-1.5 text-xs bg-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded-full">Weekly</span>
+                </td>
+                <td colSpan={7} className="px-1 py-2 text-center">
+                  {done ? (
+                    <span className="text-green-500 font-medium">✅ Completed this week!</span>
+                  ) : (
+                    <span className="text-indigo-400 font-medium">○ Not yet completed</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ── History view ────────────────────────────────────────────────
+
+function HistoryView({ history, currentStreak }: { history: WeekHistory[]; currentStreak: number }) {
+  if (history.length === 0) {
+    return (
+      <div className="text-center py-6 text-gray-400 italic text-sm">
+        No history yet — complete a week to see it here!
+      </div>
+    );
+  }
+
+  const reversed = [...history].reverse();
+
+  return (
+    <div className="space-y-3">
+      {currentStreak > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-center">
+          <span className="text-2xl">🔥</span>
+          <p className="font-bold text-orange-700">
+            {currentStreak} week{currentStreak > 1 ? '' : ''} streak!
+          </p>
+          <p className="text-xs text-orange-500">Consecutive weeks with 100% completion</p>
+        </div>
+      )}
+      {reversed.map((week) => {
+        const date = new Date(week.weekStart + 'T00:00:00');
+        const label = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const isPerfect = week.completionPct === 100;
+        return (
+          <div
+            key={week.weekStart}
+            className={`rounded-xl p-3 border ${
+              isPerfect ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-gray-800 text-sm">Week of {label}</p>
+                <p className="text-xs text-gray-400">
+                  {week.completedTasks}/{week.totalTasks} tasks · {week.bonusStarsEarned} bonus ⭐
+                </p>
+              </div>
+              <div className="text-right">
+                <p className={`text-lg font-black ${isPerfect ? 'text-green-600' : week.completionPct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>
+                  {week.completionPct}%
+                </p>
+                {isPerfect && <span className="text-xs">🏆 Perfect!</span>}
+              </div>
+            </div>
+            {/* Mini bar */}
+            <div className="mt-2 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${week.completionPct}%`,
+                  background: isPerfect
+                    ? 'linear-gradient(90deg, #34d399, #10b981)'
+                    : week.completionPct >= 50
+                    ? 'linear-gradient(90deg, #fbbf24, #f59e0b)'
+                    : 'linear-gradient(90deg, #f87171, #ef4444)',
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -202,9 +338,13 @@ function WeekGrid({ week, tasks }: { week: WeekData; tasks: Task[] }) {
 export default function ParentView({
   tasks,
   dailyTasks,
+  weeklyTasks,
   bonusTasks,
   currentWeek,
   todayProgress,
+  weekHistory,
+  bonusStars,
+  currentStreak,
   onAddTask,
   onEditTask,
   onRemoveTask,
@@ -217,6 +357,9 @@ export default function ParentView({
   const [confirmReset, setConfirmReset] = useState(false);
 
   const editingTask = editingId ? tasks.find((t) => t.id === editingId) : null;
+
+  // Combine daily and weekly for display
+  const allRegularTasks = [...dailyTasks, ...weeklyTasks];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -236,10 +379,32 @@ export default function ParentView({
       </header>
 
       <main className="max-w-lg mx-auto px-5 py-6 space-y-8">
+
+        {/* ── Stats overview ── */}
+        <section>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
+              <p className="text-2xl">🔥</p>
+              <p className="text-xl font-black text-orange-600">{currentStreak}</p>
+              <p className="text-xs text-gray-400">Week Streak</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
+              <p className="text-2xl">⭐</p>
+              <p className="text-xl font-black text-yellow-600">{bonusStars}</p>
+              <p className="text-xs text-gray-400">Bonus Stars</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
+              <p className="text-2xl">📊</p>
+              <p className="text-xl font-black text-purple-600">{weekHistory.length}</p>
+              <p className="text-xs text-gray-400">Weeks Tracked</p>
+            </div>
+          </div>
+        </section>
+
         {/* ── Manage Tasks ── */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">📋 Daily Tasks</h2>
+            <h2 className="text-lg font-bold text-gray-800">📋 Tasks</h2>
             <button
               type="button"
               onClick={() => { setShowAddForm(true); setEditingId(null); }}
@@ -252,8 +417,8 @@ export default function ParentView({
           {showAddForm && !editingId && (
             <div className="mb-4">
               <TaskForm
-                onSubmit={(title, emoji, isBonus) => {
-                  onAddTask(title, emoji, isBonus);
+                onSubmit={(title, emoji, isBonus, frequency) => {
+                  onAddTask(title, emoji, isBonus, frequency);
                   setShowAddForm(false);
                 }}
                 onCancel={() => setShowAddForm(false)}
@@ -262,13 +427,13 @@ export default function ParentView({
           )}
 
           <div className="space-y-2">
-            {dailyTasks.map((task) =>
+            {allRegularTasks.map((task) =>
               editingId === task.id && editingTask ? (
                 <TaskForm
                   key={task.id}
-                  initial={{ title: editingTask.title, emoji: editingTask.emoji, isBonus: editingTask.isBonus }}
-                  onSubmit={(title, emoji, isBonus) => {
-                    onEditTask(task.id, { title, emoji, isBonus });
+                  initial={{ title: editingTask.title, emoji: editingTask.emoji, isBonus: editingTask.isBonus, frequency: editingTask.frequency || 'daily' }}
+                  onSubmit={(title, emoji, isBonus, frequency) => {
+                    onEditTask(task.id, { title, emoji, isBonus, frequency });
                     setEditingId(null);
                   }}
                   onCancel={() => setEditingId(null)}
@@ -292,15 +457,15 @@ export default function ParentView({
           <h2 className="text-lg font-bold text-gray-800 mb-4">⭐ Bonus Tasks</h2>
           <div className="space-y-2">
             {bonusTasks.length === 0 && (
-              <p className="text-sm text-gray-400 italic">No bonus tasks yet — add one above and tick "Bonus task".</p>
+              <p className="text-sm text-gray-400 italic">No bonus tasks yet — add one above and tick &quot;Bonus task&quot;.</p>
             )}
             {bonusTasks.map((task) =>
               editingId === task.id && editingTask ? (
                 <TaskForm
                   key={task.id}
-                  initial={{ title: editingTask.title, emoji: editingTask.emoji, isBonus: editingTask.isBonus }}
-                  onSubmit={(title, emoji, isBonus) => {
-                    onEditTask(task.id, { title, emoji, isBonus });
+                  initial={{ title: editingTask.title, emoji: editingTask.emoji, isBonus: editingTask.isBonus, frequency: editingTask.frequency || 'daily' }}
+                  onSubmit={(title, emoji, isBonus, frequency) => {
+                    onEditTask(task.id, { title, emoji, isBonus, frequency });
                     setEditingId(null);
                   }}
                   onCancel={() => setEditingId(null)}
@@ -323,7 +488,15 @@ export default function ParentView({
         <section>
           <h2 className="text-lg font-bold text-gray-800 mb-4">📊 This Week</h2>
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-            <WeekGrid week={currentWeek} tasks={tasks} />
+            <WeekGrid week={currentWeek} dailyTasks={dailyTasks} weeklyTasks={weeklyTasks} />
+          </div>
+        </section>
+
+        {/* ── History ── */}
+        <section>
+          <h2 className="text-lg font-bold text-gray-800 mb-4">📜 Past Weeks</h2>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+            <HistoryView history={weekHistory} currentStreak={currentStreak} />
           </div>
         </section>
 

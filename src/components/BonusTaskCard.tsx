@@ -5,15 +5,17 @@ interface Props {
   task: Task;
   done: boolean;
   onToggle: () => void;
+  onStarEarned?: () => void;
 }
 
-export default function BonusTaskCard({ task, done, onToggle }: Props) {
+export default function BonusTaskCard({ task, done, onToggle, onStarEarned }: Props) {
   const [popping, setPopping] = useState(false);
 
   const handleClick = () => {
     if (!done) {
       setPopping(true);
       setTimeout(() => setPopping(false), 600);
+      onStarEarned?.();
     }
     onToggle();
   };
@@ -32,9 +34,22 @@ export default function BonusTaskCard({ task, done, onToggle }: Props) {
         ${popping ? 'animate-pop' : ''}
       `}
     >
+      {/* Star reward badge */}
+      <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full shadow-md z-10">
+        ⭐ +1 Star
+      </div>
+
       {popping && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="absolute text-xl animate-burst">🌟</span>
+          {['⭐', '🌟', '✨', '💫'].map((e, i) => (
+            <span
+              key={i}
+              className="absolute text-xl animate-burst"
+              style={{ animationDelay: `${i * 100}ms`, transform: `rotate(${i * 90}deg) translateY(-40px)` }}
+            >
+              {e}
+            </span>
+          ))}
         </div>
       )}
 
@@ -44,7 +59,9 @@ export default function BonusTaskCard({ task, done, onToggle }: Props) {
           <p className={`font-bold text-base ${done ? 'text-yellow-700 line-through' : 'text-gray-800'}`}>
             {task.title}
           </p>
-          <p className="text-xs text-purple-500 font-medium">⭐ Bonus challenge!</p>
+          <p className="text-xs text-purple-500 font-medium">
+            {done ? '⭐ Star earned!' : '⭐ Bonus challenge — earn a star!'}
+          </p>
         </div>
         {done ? (
           <span className="text-yellow-500 text-2xl">✔️</span>
