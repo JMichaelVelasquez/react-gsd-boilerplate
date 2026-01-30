@@ -25,7 +25,7 @@ export default function BonusTaskCard({ task, done, onToggle, onStarEarned }: Pr
       type="button"
       onClick={handleClick}
       className={`
-        relative w-full text-left rounded-2xl p-4 shadow-md border-2 border-dashed
+        relative w-full text-left rounded-2xl md:rounded-3xl p-4 md:p-5 lg:p-6 shadow-md border-2 border-dashed
         transition-all duration-300 active:scale-95
         ${done
           ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300/50'
@@ -35,7 +35,7 @@ export default function BonusTaskCard({ task, done, onToggle, onStarEarned }: Pr
       `}
     >
       {/* Star reward badge */}
-      <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full shadow-md z-10">
+      <div className="absolute -top-2 -right-2 md:-top-3 md:-right-3 bg-yellow-400 text-yellow-900 text-xs md:text-sm font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full shadow-md z-10">
         ⭐ +1 Star
       </div>
 
@@ -44,7 +44,7 @@ export default function BonusTaskCard({ task, done, onToggle, onStarEarned }: Pr
           {['⭐', '🌟', '✨', '💫'].map((e, i) => (
             <span
               key={i}
-              className="absolute text-xl animate-burst"
+              className="absolute text-xl md:text-2xl animate-burst"
               style={{ animationDelay: `${i * 100}ms`, transform: `rotate(${i * 90}deg) translateY(-40px)` }}
             >
               {e}
@@ -53,20 +53,20 @@ export default function BonusTaskCard({ task, done, onToggle, onStarEarned }: Pr
         </div>
       )}
 
-      <div className="flex items-center gap-3">
-        <span className="text-3xl">{done ? '🌟' : task.emoji}</span>
+      <div className="flex items-center gap-3 md:gap-4">
+        <span className="text-3xl md:text-4xl lg:text-5xl">{done ? '🌟' : task.emoji}</span>
         <div className="flex-1 min-w-0">
-          <p className={`font-bold text-base ${done ? 'text-yellow-700 line-through' : 'text-gray-800'}`}>
+          <p className={`font-bold text-base md:text-lg lg:text-xl ${done ? 'text-yellow-700 line-through' : 'text-gray-800'}`}>
             {task.title}
           </p>
-          <p className="text-xs text-purple-500 font-medium">
+          <p className="text-xs md:text-sm text-purple-500 font-medium">
             {done ? '⭐ Star earned!' : '⭐ Bonus challenge — earn a star!'}
           </p>
         </div>
         {done ? (
-          <span className="text-yellow-500 text-2xl">✔️</span>
+          <span className="text-yellow-500 text-2xl md:text-3xl">✔️</span>
         ) : (
-          <span className="text-purple-300 text-2xl">○</span>
+          <span className="text-purple-300 text-2xl md:text-3xl">○</span>
         )}
       </div>
     </button>

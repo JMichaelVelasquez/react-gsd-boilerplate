@@ -37,12 +37,12 @@ export default function TaskCard({ task, done, skipped, onToggle }: Props) {
 
   if (skipped) {
     return (
-      <div className="relative rounded-3xl p-5 bg-gray-300/60 opacity-50 shadow-md select-none">
+      <div className="relative rounded-3xl p-5 md:p-6 bg-gray-300/60 opacity-50 shadow-md select-none">
         <div className="flex items-center gap-4">
-          <span className="text-4xl grayscale">⏭️</span>
+          <span className="text-4xl md:text-5xl grayscale">⏭️</span>
           <div className="flex-1">
-            <p className="font-bold text-lg text-gray-500 line-through">{task.title}</p>
-            <p className="text-sm text-gray-400 italic">Skipped today</p>
+            <p className="font-bold text-lg md:text-xl text-gray-500 line-through">{task.title}</p>
+            <p className="text-sm md:text-base text-gray-400 italic">Skipped today</p>
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@ export default function TaskCard({ task, done, skipped, onToggle }: Props) {
       type="button"
       onClick={handleClick}
       className={`
-        relative w-full text-left rounded-3xl p-5 shadow-lg
+        relative w-full text-left rounded-3xl p-5 md:p-6 lg:p-7 shadow-lg
         transition-all duration-300 active:scale-95
         ${done ? 'bg-gradient-to-br from-emerald-400 to-green-600 ring-4 ring-green-300/50' : `bg-gradient-to-br ${gradient}`}
         ${popping ? 'animate-pop' : ''}
@@ -68,7 +68,7 @@ export default function TaskCard({ task, done, skipped, onToggle }: Props) {
           {['🎉', '⭐', '✨', '🌟'].map((e, i) => (
             <span
               key={i}
-              className="absolute text-2xl animate-burst"
+              className="absolute text-2xl md:text-3xl animate-burst"
               style={{ animationDelay: `${i * 80}ms`, transform: `rotate(${i * 90}deg) translateY(-40px)` }}
             >
               {e}
@@ -78,17 +78,17 @@ export default function TaskCard({ task, done, skipped, onToggle }: Props) {
       )}
 
       <div className="flex items-center gap-4">
-        <span className={`text-5xl transition-transform duration-300 ${done ? 'scale-110' : ''}`}>
+        <span className={`text-5xl md:text-6xl transition-transform duration-300 ${done ? 'scale-110' : ''}`}>
           {done ? '✅' : task.emoji}
         </span>
         <div className="flex-1 min-w-0">
-          <p className={`font-extrabold text-xl text-white drop-shadow ${done ? 'line-through opacity-80' : ''}`}>
+          <p className={`font-extrabold text-xl md:text-2xl text-white drop-shadow ${done ? 'line-through opacity-80' : ''}`}>
             {task.title}
           </p>
-          {done && <p className="text-sm text-white/80 font-medium">Nice one, Caleb! 💪</p>}
+          {done && <p className="text-sm md:text-base text-white/80 font-medium">Nice one, Caleb! 💪</p>}
         </div>
         {!done && (
-          <span className="text-white/60 text-3xl">○</span>
+          <span className="text-white/60 text-3xl md:text-4xl">○</span>
         )}
       </div>
     </button>

@@ -20,13 +20,13 @@ export default function StarBurst({ onDone }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
       <div className="relative">
-        {/* Central star */}
-        <span className="text-7xl animate-star-grow block">⭐</span>
+        {/* Central star — scales on larger screens */}
+        <span className="text-7xl md:text-8xl lg:text-9xl animate-star-grow block">⭐</span>
         {/* Orbiting particles */}
         {['✨', '🌟', '💫', '⭐', '✨', '🌟'].map((emoji, i) => (
           <span
             key={i}
-            className="absolute text-2xl animate-star-orbit"
+            className="absolute text-2xl md:text-3xl lg:text-4xl animate-star-orbit"
             style={{
               animationDelay: `${i * 150}ms`,
               top: '50%',
@@ -40,7 +40,7 @@ export default function StarBurst({ onDone }: Props) {
       </div>
       {/* Text */}
       <div className="absolute bottom-1/3 animate-star-text">
-        <p className="text-2xl font-black text-yellow-300 drop-shadow-lg text-center">
+        <p className="text-2xl md:text-3xl lg:text-4xl font-black text-yellow-300 drop-shadow-lg text-center">
           ⭐ Bonus Star Earned! ⭐
         </p>
       </div>

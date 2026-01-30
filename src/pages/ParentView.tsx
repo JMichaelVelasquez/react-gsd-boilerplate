@@ -51,7 +51,7 @@ function TaskForm({
               key={e}
               type="button"
               onClick={() => setEmoji(e)}
-              className={`text-2xl p-1 rounded-lg transition-all ${emoji === e ? 'bg-purple-100 ring-2 ring-purple-400 scale-110' : 'hover:bg-gray-100'}`}
+              className={`text-2xl md:text-3xl p-1 md:p-1.5 rounded-lg transition-all ${emoji === e ? 'bg-purple-100 ring-2 ring-purple-400 scale-110' : 'hover:bg-gray-100'}`}
             >
               {e}
             </button>
@@ -102,7 +102,7 @@ function ScheduledTaskRow({
 }) {
   return (
     <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-      <span className="text-2xl">{task.emoji}</span>
+      <span className="text-2xl md:text-3xl">{task.emoji}</span>
       <p className="flex-1 font-semibold text-gray-800 truncate">{task.title}</p>
       <div className="flex items-center gap-1">
         <button
@@ -139,7 +139,7 @@ function BonusTaskRow({
 }) {
   return (
     <div className="flex items-center gap-3 bg-yellow-50 rounded-xl px-4 py-3 border border-yellow-200">
-      <span className="text-2xl">{task.emoji}</span>
+      <span className="text-2xl md:text-3xl">{task.emoji}</span>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-gray-800 truncate">{task.title}</p>
         <p className="text-xs text-yellow-600">⭐ Bonus — available every day</p>
@@ -338,6 +338,73 @@ function TemplatesSection({
   );
 }
 
+// ── Week At A Glance (desktop-only overview) ────────────────────
+
+function WeekAtAGlance({
+  store,
+  selectedDay,
+  onSelectDay,
+}: {
+  store: AppStore;
+  selectedDay: DayOfWeek;
+  onSelectDay: (day: DayOfWeek) => void;
+}) {
+  const todayDow = getDayOfWeek();
+
+  return (
+    <div className="hidden lg:block mb-6">
+      <h3 className="text-sm font-semibold text-gray-500 mb-3">Week at a Glance</h3>
+      <div className="grid grid-cols-7 gap-2">
+        {ALL_DAYS.map((day) => {
+          const taskIds = (store.state.weeklySchedule[day] || []).filter((id) => {
+            const t = store.state.tasks.find((task) => task.id === id);
+            return t && !t.isBonus;
+          });
+          const tasks = taskIds
+            .map((id) => store.state.tasks.find((t) => t.id === id))
+            .filter((t): t is Task => t != null);
+          const isSelected = day === selectedDay;
+          const isToday = day === todayDow;
+
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => onSelectDay(day)}
+              className={`rounded-xl p-3 text-left transition-all border-2 min-h-[120px] ${
+                isSelected
+                  ? 'border-purple-500 bg-purple-50 shadow-md'
+                  : isToday
+                    ? 'border-purple-300 bg-white hover:bg-purple-50'
+                    : 'border-gray-200 bg-white hover:border-purple-200 hover:bg-gray-50'
+              }`}
+            >
+              <p className={`text-xs font-bold mb-2 ${isSelected ? 'text-purple-700' : isToday ? 'text-purple-600' : 'text-gray-500'}`}>
+                {DAY_LABELS[day]}
+              </p>
+              {tasks.length === 0 ? (
+                <p className="text-xs text-gray-300 italic">No tasks</p>
+              ) : (
+                <div className="space-y-1">
+                  {tasks.slice(0, 4).map((task) => (
+                    <div key={task.id} className="flex items-center gap-1">
+                      <span className="text-sm">{task.emoji}</span>
+                      <span className="text-xs text-gray-600 truncate">{task.title}</span>
+                    </div>
+                  ))}
+                  {tasks.length > 4 && (
+                    <p className="text-xs text-gray-400">+{tasks.length - 4} more</p>
+                  )}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Weekly Progress Grid ────────────────────────────────────────
 
 function WeekGrid({ store }: { store: AppStore }) {
@@ -406,7 +473,7 @@ function WeekGrid({ store }: { store: AppStore }) {
           {overallPct}%
         </span>
       </div>
-      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-full h-2 md:h-3 bg-gray-200 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{
@@ -430,7 +497,7 @@ function WeekGrid({ store }: { store: AppStore }) {
               {DAY_NAMES.map((d, i) => (
                 <th
                   key={d}
-                  className={`px-1 py-2 text-center font-medium ${
+                  className={`px-1 md:px-2 py-2 text-center font-medium ${
                     dates[i] === today ? 'text-purple-600' : 'text-gray-400'
                   }`}
                 >
@@ -450,7 +517,7 @@ function WeekGrid({ store }: { store: AppStore }) {
                   const isScheduled = (state.weeklySchedule[dow] || []).includes(task.id);
                   if (!isScheduled) {
                     return (
-                      <td key={i} className="px-1 py-2 text-center">
+                      <td key={i} className="px-1 md:px-2 py-2 text-center">
                         <span className="text-gray-200">—</span>
                       </td>
                     );
@@ -459,7 +526,7 @@ function WeekGrid({ store }: { store: AppStore }) {
                   const done = day?.completedTaskIds.includes(task.id);
                   const skipped = day?.skippedTaskIds.includes(task.id);
                   return (
-                    <td key={i} className="px-1 py-2 text-center">
+                    <td key={i} className="px-1 md:px-2 py-2 text-center">
                       {skipped ? (
                         <span className="text-amber-400" title="Skipped">
                           ⏭️
@@ -501,12 +568,12 @@ function HistoryView({ history, currentStreak }: { history: { weekStart: string;
   return (
     <div className="space-y-3">
       {currentStreak > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-center">
-          <span className="text-2xl">🔥</span>
-          <p className="font-bold text-orange-700">
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 md:p-4 text-center">
+          <span className="text-2xl md:text-3xl">🔥</span>
+          <p className="font-bold text-orange-700 md:text-lg">
             {currentStreak} week{currentStreak > 1 ? 's' : ''} streak!
           </p>
-          <p className="text-xs text-orange-500">Consecutive weeks with 100% completion</p>
+          <p className="text-xs md:text-sm text-orange-500">Consecutive weeks with 100% completion</p>
         </div>
       )}
       {reversed.map((week) => {
@@ -516,27 +583,27 @@ function HistoryView({ history, currentStreak }: { history: { weekStart: string;
         return (
           <div
             key={week.weekStart}
-            className={`rounded-xl p-3 border ${
+            className={`rounded-xl p-3 md:p-4 border ${
               isPerfect ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
             }`}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-gray-800 text-sm">Week of {label}</p>
-                <p className="text-xs text-gray-400">
+                <p className="font-semibold text-gray-800 text-sm md:text-base">Week of {label}</p>
+                <p className="text-xs md:text-sm text-gray-400">
                   {week.completedTasks}/{week.totalTasks} tasks · {week.bonusStarsEarned} bonus ⭐
                 </p>
               </div>
               <div className="text-right">
                 <p
-                  className={`text-lg font-black ${isPerfect ? 'text-green-600' : week.completionPct >= 50 ? 'text-amber-600' : 'text-red-500'}`}
+                  className={`text-lg md:text-xl font-black ${isPerfect ? 'text-green-600' : week.completionPct >= 50 ? 'text-amber-600' : 'text-red-500'}`}
                 >
                   {week.completionPct}%
                 </p>
-                {isPerfect && <span className="text-xs">🏆 Perfect!</span>}
+                {isPerfect && <span className="text-xs md:text-sm">🏆 Perfect!</span>}
               </div>
             </div>
-            <div className="mt-2 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="mt-2 w-full h-2 md:h-3 bg-gray-200 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
@@ -573,359 +640,376 @@ export default function ParentView({ store, onBack }: Props) {
   const unscheduledTasks = store.getUnscheduledTasksForDay(selectedDay);
   const editingTask = editingId ? store.state.tasks.find((t) => t.id === editingId) : null;
 
+  const handleSelectDay = (day: DayOfWeek) => {
+    setSelectedDay(day);
+    setShowAddForm(false);
+    setEditingId(null);
+    setShowExisting(false);
+    setShowCopyDay(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-5 py-4 flex items-center justify-between">
+        <div className="max-w-lg md:max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 md:px-8 py-4 flex items-center justify-between">
           <button
             type="button"
             onClick={onBack}
-            className="text-purple-600 font-medium text-sm hover:text-purple-800 transition-colors"
+            className="text-purple-600 font-medium text-sm md:text-base hover:text-purple-800 transition-colors"
           >
             ← Back to Caleb
           </button>
-          <h1 className="font-bold text-gray-800">🔒 Parent Mode</h1>
-          <div className="w-20" />
+          <h1 className="font-bold text-gray-800 md:text-lg">🔒 Parent Mode</h1>
+          <div className="w-20 md:w-28" />
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-5 py-6 space-y-8">
+      <main className="max-w-lg md:max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-5 md:px-8 py-6 md:py-8 space-y-8">
         {/* ── Stats overview ── */}
         <section>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
-              <p className="text-2xl">🔥</p>
-              <p className="text-xl font-black text-orange-600">{store.currentStreak}</p>
-              <p className="text-xs text-gray-400">Week Streak</p>
+          <div className="grid grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+            <div className="bg-white rounded-xl md:rounded-2xl border border-gray-200 p-3 md:p-5 text-center shadow-sm">
+              <p className="text-2xl md:text-3xl lg:text-4xl">🔥</p>
+              <p className="text-xl md:text-2xl lg:text-3xl font-black text-orange-600">{store.currentStreak}</p>
+              <p className="text-xs md:text-sm text-gray-400">Week Streak</p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
-              <p className="text-2xl">⭐</p>
-              <p className="text-xl font-black text-yellow-600">{store.state.bonusStars || 0}</p>
-              <p className="text-xs text-gray-400">Bonus Stars</p>
+            <div className="bg-white rounded-xl md:rounded-2xl border border-gray-200 p-3 md:p-5 text-center shadow-sm">
+              <p className="text-2xl md:text-3xl lg:text-4xl">⭐</p>
+              <p className="text-xl md:text-2xl lg:text-3xl font-black text-yellow-600">{store.state.bonusStars || 0}</p>
+              <p className="text-xs md:text-sm text-gray-400">Bonus Stars</p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
-              <p className="text-2xl">📊</p>
-              <p className="text-xl font-black text-purple-600">{(store.state.weekHistory || []).length}</p>
-              <p className="text-xs text-gray-400">Weeks Tracked</p>
+            <div className="bg-white rounded-xl md:rounded-2xl border border-gray-200 p-3 md:p-5 text-center shadow-sm">
+              <p className="text-2xl md:text-3xl lg:text-4xl">📊</p>
+              <p className="text-xl md:text-2xl lg:text-3xl font-black text-purple-600">{(store.state.weekHistory || []).length}</p>
+              <p className="text-xs md:text-sm text-gray-400">Weeks Tracked</p>
             </div>
           </div>
         </section>
 
-        {/* ── Weekly Planner ── */}
-        <section>
-          <h2 className="text-lg font-bold text-gray-800 mb-4">📅 Weekly Planner</h2>
+        {/* ── Desktop 2-column layout: Planner + Bonus/Templates ── */}
+        <div className="space-y-8 lg:grid lg:grid-cols-5 lg:gap-8 lg:space-y-0">
 
-          {/* Day tabs */}
-          <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
-            {ALL_DAYS.map((day) => {
-              const taskCount = (store.state.weeklySchedule[day] || []).filter((id) => {
-                const t = store.state.tasks.find((task) => task.id === id);
-                return t && !t.isBonus;
-              }).length;
-              const isSelected = day === selectedDay;
-              const isToday = day === todayDow;
+          {/* Left column: Weekly Planner */}
+          <div className="lg:col-span-3 space-y-8">
+            <section>
+              <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4">📅 Weekly Planner</h2>
 
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => {
-                    setSelectedDay(day);
-                    setShowAddForm(false);
-                    setEditingId(null);
-                    setShowExisting(false);
-                    setShowCopyDay(false);
-                  }}
-                  className={`flex-1 min-w-[48px] py-2.5 rounded-xl text-center transition-all ${
-                    isSelected
-                      ? 'bg-purple-500 text-white shadow-md'
-                      : isToday
-                        ? 'bg-purple-100 text-purple-700 border border-purple-300'
-                        : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-200'
-                  }`}
-                >
-                  <span className="block text-xs font-bold">{DAY_LABELS[day]}</span>
-                  <span className={`block text-lg font-black ${isSelected ? 'text-white' : taskCount > 0 ? 'text-gray-800' : 'text-gray-300'}`}>
-                    {taskCount}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+              {/* Desktop: Week at a Glance overview */}
+              <WeekAtAGlance store={store} selectedDay={selectedDay} onSelectDay={handleSelectDay} />
 
-          {/* Selected day's tasks */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3">
-            <h3 className="font-bold text-gray-700 text-sm">
-              {DAY_FULL_LABELS[selectedDay]}&apos;s Tasks
-            </h3>
+              {/* Day tabs (mobile/tablet primary nav, desktop secondary) */}
+              <div className="flex gap-1 md:gap-2 mb-4 overflow-x-auto pb-1 lg:hidden">
+                {ALL_DAYS.map((day) => {
+                  const taskCount = (store.state.weeklySchedule[day] || []).filter((id) => {
+                    const t = store.state.tasks.find((task) => task.id === id);
+                    return t && !t.isBonus;
+                  }).length;
+                  const isSelected = day === selectedDay;
+                  const isToday = day === todayDow;
 
-            {dayTasks.length === 0 && !showAddForm && (
-              <p className="text-sm text-gray-400 italic py-2">
-                No tasks on {DAY_FULL_LABELS[selectedDay]} — add some below!
-              </p>
-            )}
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => handleSelectDay(day)}
+                      className={`flex-1 min-w-[48px] py-2.5 rounded-xl text-center transition-all ${
+                        isSelected
+                          ? 'bg-purple-500 text-white shadow-md'
+                          : isToday
+                            ? 'bg-purple-100 text-purple-700 border border-purple-300'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-200'
+                      }`}
+                    >
+                      <span className="block text-xs font-bold">{DAY_LABELS[day]}</span>
+                      <span className={`block text-lg font-black ${isSelected ? 'text-white' : taskCount > 0 ? 'text-gray-800' : 'text-gray-300'}`}>
+                        {taskCount}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Task list */}
-            <div className="space-y-2">
-              {dayTasks.map((task) =>
-                editingId === task.id && editingTask ? (
+              {/* Selected day's tasks */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5 shadow-sm space-y-3">
+                <h3 className="font-bold text-gray-700 text-sm md:text-base">
+                  {DAY_FULL_LABELS[selectedDay]}&apos;s Tasks
+                </h3>
+
+                {dayTasks.length === 0 && !showAddForm && (
+                  <p className="text-sm text-gray-400 italic py-2">
+                    No tasks on {DAY_FULL_LABELS[selectedDay]} — add some below!
+                  </p>
+                )}
+
+                {/* Task list */}
+                <div className="space-y-2">
+                  {dayTasks.map((task) =>
+                    editingId === task.id && editingTask ? (
+                      <TaskForm
+                        key={task.id}
+                        initial={{ title: editingTask.title, emoji: editingTask.emoji }}
+                        submitLabel="Save Changes"
+                        onSubmit={(title, emoji) => {
+                          store.editTask(task.id, { title, emoji });
+                          setEditingId(null);
+                        }}
+                        onCancel={() => setEditingId(null)}
+                        onDelete={() => {
+                          store.removeTask(task.id);
+                          setEditingId(null);
+                        }}
+                      />
+                    ) : confirmDeleteId === task.id ? (
+                      <div key={task.id} className="bg-red-50 rounded-xl border border-red-200 p-3 space-y-2">
+                        <p className="text-sm text-red-700 font-medium">
+                          Remove &quot;{task.title}&quot; from {DAY_FULL_LABELS[selectedDay]}?
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              store.removeTaskFromDay(task.id, selectedDay);
+                              setConfirmDeleteId(null);
+                            }}
+                            className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-lg font-medium"
+                          >
+                            Remove
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-xs px-3 py-1.5 bg-gray-200 text-gray-600 rounded-lg font-medium"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <ScheduledTaskRow
+                        key={task.id}
+                        task={task}
+                        onEdit={() => {
+                          setEditingId(task.id);
+                          setShowAddForm(false);
+                        }}
+                        onRemoveFromDay={() => setConfirmDeleteId(task.id)}
+                      />
+                    ),
+                  )}
+                </div>
+
+                {/* Add task form */}
+                {showAddForm && (
                   <TaskForm
-                    key={task.id}
-                    initial={{ title: editingTask.title, emoji: editingTask.emoji }}
-                    submitLabel="Save Changes"
+                    submitLabel={`Add to ${DAY_LABELS[selectedDay]}`}
                     onSubmit={(title, emoji) => {
-                      store.editTask(task.id, { title, emoji });
-                      setEditingId(null);
+                      store.addTaskToDay(title, emoji, selectedDay);
+                      setShowAddForm(false);
                     }}
-                    onCancel={() => setEditingId(null)}
-                    onDelete={() => {
-                      store.removeTask(task.id);
-                      setEditingId(null);
-                    }}
+                    onCancel={() => setShowAddForm(false)}
                   />
-                ) : confirmDeleteId === task.id ? (
-                  <div key={task.id} className="bg-red-50 rounded-xl border border-red-200 p-3 space-y-2">
-                    <p className="text-sm text-red-700 font-medium">
-                      Remove &quot;{task.title}&quot; from {DAY_FULL_LABELS[selectedDay]}?
+                )}
+
+                {/* Add existing tasks dropdown */}
+                {showExisting && unscheduledTasks.length > 0 && (
+                  <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-3 space-y-2">
+                    <p className="text-sm font-medium text-indigo-700">
+                      Add existing task to {DAY_LABELS[selectedDay]}:
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {unscheduledTasks.map((task) => (
+                        <button
+                          key={task.id}
+                          type="button"
+                          onClick={() => {
+                            store.addExistingTaskToDay(task.id, selectedDay);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl border border-indigo-200
+                            hover:border-indigo-400 hover:bg-indigo-100 transition-all text-sm font-medium text-gray-700"
+                        >
+                          <span>{task.emoji}</span>
+                          <span>{task.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowExisting(false)}
+                      className="text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
+
+                {/* Copy day modal */}
+                {showCopyDay && (
+                  <CopyDayModal
+                    fromDay={selectedDay}
+                    onCopy={(toDays) => {
+                      store.copyDay(selectedDay, toDays);
+                      setShowCopyDay(false);
+                    }}
+                    onClose={() => setShowCopyDay(false)}
+                  />
+                )}
+
+                {/* Action buttons */}
+                {!showAddForm && !showCopyDay && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddForm(true);
+                        setEditingId(null);
+                        setShowExisting(false);
+                      }}
+                      className="text-sm px-3 py-1.5 md:px-4 md:py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors"
+                    >
+                      + New Task
+                    </button>
+                    {unscheduledTasks.length > 0 && (
                       <button
                         type="button"
                         onClick={() => {
-                          store.removeTaskFromDay(task.id, selectedDay);
-                          setConfirmDeleteId(null);
+                          setShowExisting(!showExisting);
+                          setShowAddForm(false);
                         }}
-                        className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-lg font-medium"
+                        className="text-sm px-3 py-1.5 md:px-4 md:py-2 bg-indigo-100 text-indigo-700 rounded-lg font-medium hover:bg-indigo-200 transition-colors"
                       >
-                        Remove
+                        + From Library ({unscheduledTasks.length})
                       </button>
+                    )}
+                    {dayTasks.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="text-xs px-3 py-1.5 bg-gray-200 text-gray-600 rounded-lg font-medium"
+                        onClick={() => {
+                          setShowCopyDay(true);
+                          setShowAddForm(false);
+                          setShowExisting(false);
+                        }}
+                        className="text-sm px-3 py-1.5 md:px-4 md:py-2 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                       >
-                        Cancel
+                        📋 Copy to…
                       </button>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <ScheduledTaskRow
-                    key={task.id}
-                    task={task}
-                    onEdit={() => {
-                      setEditingId(task.id);
-                      setShowAddForm(false);
-                    }}
-                    onRemoveFromDay={() => setConfirmDeleteId(task.id)}
-                  />
-                ),
-              )}
-            </div>
-
-            {/* Add task form */}
-            {showAddForm && (
-              <TaskForm
-                submitLabel={`Add to ${DAY_LABELS[selectedDay]}`}
-                onSubmit={(title, emoji) => {
-                  store.addTaskToDay(title, emoji, selectedDay);
-                  setShowAddForm(false);
-                }}
-                onCancel={() => setShowAddForm(false)}
-              />
-            )}
-
-            {/* Add existing tasks dropdown */}
-            {showExisting && unscheduledTasks.length > 0 && (
-              <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-3 space-y-2">
-                <p className="text-sm font-medium text-indigo-700">
-                  Add existing task to {DAY_LABELS[selectedDay]}:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {unscheduledTasks.map((task) => (
-                    <button
-                      key={task.id}
-                      type="button"
-                      onClick={() => {
-                        store.addExistingTaskToDay(task.id, selectedDay);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl border border-indigo-200
-                        hover:border-indigo-400 hover:bg-indigo-100 transition-all text-sm font-medium text-gray-700"
-                    >
-                      <span>{task.emoji}</span>
-                      <span>{task.title}</span>
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowExisting(false)}
-                  className="text-xs text-indigo-500 hover:text-indigo-700 font-medium"
-                >
-                  Close
-                </button>
+                )}
               </div>
-            )}
+            </section>
+          </div>
 
-            {/* Copy day modal */}
-            {showCopyDay && (
-              <CopyDayModal
-                fromDay={selectedDay}
-                onCopy={(toDays) => {
-                  store.copyDay(selectedDay, toDays);
-                  setShowCopyDay(false);
-                }}
-                onClose={() => setShowCopyDay(false)}
-              />
-            )}
-
-            {/* Action buttons */}
-            {!showAddForm && !showCopyDay && (
-              <div className="flex flex-wrap gap-2 pt-1">
+          {/* Right column: Bonus Tasks + Templates */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* ── Bonus Tasks ── */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg md:text-xl font-bold text-gray-800">⭐ Bonus Tasks</h2>
                 <button
                   type="button"
                   onClick={() => {
-                    setShowAddForm(true);
+                    setShowAddBonus(true);
                     setEditingId(null);
-                    setShowExisting(false);
                   }}
-                  className="text-sm px-3 py-1.5 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors"
+                  className="text-sm px-3 py-1.5 md:px-4 md:py-2 bg-yellow-400 text-yellow-900 rounded-lg font-medium hover:bg-yellow-500 transition-colors"
                 >
-                  + New Task
+                  + Add Bonus
                 </button>
-                {unscheduledTasks.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowExisting(!showExisting);
-                      setShowAddForm(false);
+              </div>
+
+              {showAddBonus && (
+                <div className="mb-3">
+                  <TaskForm
+                    submitLabel="Add Bonus Task"
+                    onSubmit={(title, emoji) => {
+                      store.addBonusTask(title, emoji);
+                      setShowAddBonus(false);
                     }}
-                    className="text-sm px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg font-medium hover:bg-indigo-200 transition-colors"
-                  >
-                    + From Library ({unscheduledTasks.length})
-                  </button>
+                    onCancel={() => setShowAddBonus(false)}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                {store.bonusTasks.length === 0 && !showAddBonus && (
+                  <p className="text-sm text-gray-400 italic">
+                    No bonus tasks yet — add optional challenges that earn stars!
+                  </p>
                 )}
-                {dayTasks.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCopyDay(true);
-                      setShowAddForm(false);
-                      setShowExisting(false);
-                    }}
-                    className="text-sm px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                  >
-                    📋 Copy to…
-                  </button>
+                {store.bonusTasks.map((task) =>
+                  editingId === task.id && editingTask ? (
+                    <TaskForm
+                      key={task.id}
+                      initial={{ title: editingTask.title, emoji: editingTask.emoji }}
+                      submitLabel="Save Changes"
+                      onSubmit={(title, emoji) => {
+                        store.editTask(task.id, { title, emoji });
+                        setEditingId(null);
+                      }}
+                      onCancel={() => setEditingId(null)}
+                      onDelete={() => {
+                        store.removeTask(task.id);
+                        setEditingId(null);
+                      }}
+                    />
+                  ) : (
+                    <BonusTaskRow
+                      key={task.id}
+                      task={task}
+                      onEdit={() => {
+                        setEditingId(task.id);
+                        setShowAddForm(false);
+                        setShowAddBonus(false);
+                      }}
+                      onRemove={() => store.removeTask(task.id)}
+                    />
+                  ),
                 )}
               </div>
-            )}
-          </div>
-        </section>
+            </section>
 
-        {/* ── Bonus Tasks ── */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">⭐ Bonus Tasks</h2>
-            <button
-              type="button"
-              onClick={() => {
-                setShowAddBonus(true);
-                setEditingId(null);
-              }}
-              className="text-sm px-3 py-1.5 bg-yellow-400 text-yellow-900 rounded-lg font-medium hover:bg-yellow-500 transition-colors"
-            >
-              + Add Bonus
-            </button>
+            {/* ── Templates ── */}
+            <section>
+              <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4">📋 Templates</h2>
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5 shadow-sm">
+                <TemplatesSection
+                  templates={store.state.templates || []}
+                  onSave={store.saveTemplate}
+                  onLoad={store.loadTemplate}
+                  onDelete={store.deleteTemplate}
+                />
+              </div>
+            </section>
           </div>
+        </div>
 
-          {showAddBonus && (
-            <div className="mb-3">
-              <TaskForm
-                submitLabel="Add Bonus Task"
-                onSubmit={(title, emoji) => {
-                  store.addBonusTask(title, emoji);
-                  setShowAddBonus(false);
-                }}
-                onCancel={() => setShowAddBonus(false)}
-              />
+        {/* ── Desktop 2-column: Progress + History ── */}
+        <div className="space-y-8 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
+          {/* ── Weekly Progress ── */}
+          <section>
+            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4">📊 This Week</h2>
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5 shadow-sm">
+              <WeekGrid store={store} />
             </div>
-          )}
+          </section>
 
-          <div className="space-y-2">
-            {store.bonusTasks.length === 0 && !showAddBonus && (
-              <p className="text-sm text-gray-400 italic">
-                No bonus tasks yet — add optional challenges that earn stars!
-              </p>
-            )}
-            {store.bonusTasks.map((task) =>
-              editingId === task.id && editingTask ? (
-                <TaskForm
-                  key={task.id}
-                  initial={{ title: editingTask.title, emoji: editingTask.emoji }}
-                  submitLabel="Save Changes"
-                  onSubmit={(title, emoji) => {
-                    store.editTask(task.id, { title, emoji });
-                    setEditingId(null);
-                  }}
-                  onCancel={() => setEditingId(null)}
-                  onDelete={() => {
-                    store.removeTask(task.id);
-                    setEditingId(null);
-                  }}
-                />
-              ) : (
-                <BonusTaskRow
-                  key={task.id}
-                  task={task}
-                  onEdit={() => {
-                    setEditingId(task.id);
-                    setShowAddForm(false);
-                    setShowAddBonus(false);
-                  }}
-                  onRemove={() => store.removeTask(task.id)}
-                />
-              ),
-            )}
-          </div>
-        </section>
-
-        {/* ── Templates ── */}
-        <section>
-          <h2 className="text-lg font-bold text-gray-800 mb-4">📋 Templates</h2>
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-            <TemplatesSection
-              templates={store.state.templates || []}
-              onSave={store.saveTemplate}
-              onLoad={store.loadTemplate}
-              onDelete={store.deleteTemplate}
-            />
-          </div>
-        </section>
-
-        {/* ── Weekly Progress ── */}
-        <section>
-          <h2 className="text-lg font-bold text-gray-800 mb-4">📊 This Week</h2>
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-            <WeekGrid store={store} />
-          </div>
-        </section>
-
-        {/* ── History ── */}
-        <section>
-          <h2 className="text-lg font-bold text-gray-800 mb-4">📜 Past Weeks</h2>
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-            <HistoryView history={store.state.weekHistory || []} currentStreak={store.currentStreak} />
-          </div>
-        </section>
+          {/* ── History ── */}
+          <section>
+            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4">📜 Past Weeks</h2>
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5 shadow-sm">
+              <HistoryView history={store.state.weekHistory || []} currentStreak={store.currentStreak} />
+            </div>
+          </section>
+        </div>
 
         {/* ── Week Reset ── */}
         <section className="pb-8">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">🔄 Reset</h2>
+          <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4">🔄 Reset</h2>
           {confirmReset ? (
-            <div className="bg-red-50 rounded-2xl border border-red-200 p-4 text-center space-y-3">
+            <div className="bg-red-50 rounded-2xl border border-red-200 p-4 md:p-5 text-center space-y-3 max-w-lg">
               <p className="text-red-700 font-medium">Clear all progress for this week?</p>
-              <p className="text-red-500 text-xs">This resets task completions only. Your schedule stays the same.</p>
+              <p className="text-red-500 text-xs md:text-sm">This resets task completions only. Your schedule stays the same.</p>
               <div className="flex gap-2 justify-center">
                 <button
                   type="button"
@@ -933,14 +1017,14 @@ export default function ParentView({ store, onBack }: Props) {
                     store.resetWeek();
                     setConfirmReset(false);
                   }}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+                  className="px-4 py-2 md:px-6 md:py-2.5 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
                 >
                   Yes, Reset
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmReset(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 md:px-6 md:py-2.5 bg-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-300 transition-colors"
                 >
                   Cancel
                 </button>
@@ -950,7 +1034,7 @@ export default function ParentView({ store, onBack }: Props) {
             <button
               type="button"
               onClick={() => setConfirmReset(true)}
-              className="w-full py-3 bg-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+              className="w-full md:w-auto py-3 md:px-8 bg-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-300 transition-colors"
             >
               Reset Week Progress
             </button>

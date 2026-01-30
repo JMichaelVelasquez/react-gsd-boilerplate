@@ -20,12 +20,12 @@ export default function CelebrationScreen({ onClose }: Props) {
         background: 'linear-gradient(135deg, #6366f1, #a855f7, #ec4899, #f59e0b)',
       }}
     >
-      {/* Floating emojis */}
+      {/* Floating emojis — scale up on larger screens */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 20 }).map((_, i) => (
           <span
             key={i}
-            className="absolute text-3xl animate-float"
+            className="absolute text-3xl md:text-4xl lg:text-5xl animate-float"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -38,23 +38,23 @@ export default function CelebrationScreen({ onClose }: Props) {
         ))}
       </div>
 
-      <div className="relative text-center px-6">
-        <div className="text-8xl mb-6 animate-bounce">🎮</div>
-        <h1 className="text-4xl sm:text-5xl font-black text-white mb-3 drop-shadow-lg">
+      <div className="relative text-center px-6 md:px-12 lg:px-20 max-w-3xl mx-auto">
+        <div className="text-8xl md:text-9xl lg:text-[10rem] mb-6 md:mb-8 animate-bounce">🎮</div>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-3 md:mb-4 drop-shadow-lg">
           Screen Time
           <br />
           Unlocked!
         </h1>
-        <p className="text-xl text-white/90 font-medium mb-2">
+        <p className="text-xl md:text-2xl lg:text-3xl text-white/90 font-medium mb-2 md:mb-3">
           All tasks done — amazing work, Caleb! 🏆
         </p>
-        <p className="text-lg text-white/70 mb-8">
+        <p className="text-lg md:text-xl lg:text-2xl text-white/70 mb-8 md:mb-10">
           You&apos;ve earned your screen time. Enjoy! 🕹️
         </p>
         <button
           type="button"
           onClick={onClose}
-          className="px-8 py-4 bg-white text-purple-600 font-extrabold text-xl rounded-full shadow-xl
+          className="px-8 py-4 md:px-12 md:py-5 bg-white text-purple-600 font-extrabold text-xl md:text-2xl rounded-full shadow-xl
             hover:bg-purple-50 active:scale-95 transition-all"
         >
           Back to Tasks ←

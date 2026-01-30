@@ -65,127 +65,134 @@ export default function CalebView({
       {showStarBurst && <StarBurst onDone={() => setShowStarBurst(false)} />}
 
       <div className="min-h-screen bg-gradient-to-b from-indigo-400 via-purple-400 to-pink-400">
-        {/* Header */}
-        <header className="pt-6 pb-4 px-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-black text-white drop-shadow-md">
-                Hey Caleb! 👋
-              </h1>
-              <p className="text-white/80 font-medium text-sm mt-1">
-                {dayName}&apos;s Quests
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onOpenParent}
-              className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center
-                text-white/60 hover:bg-white/30 transition-colors text-sm"
-              title="Parent mode"
-            >
-              ⚙️
-            </button>
-          </div>
+        {/* Responsive container: mobile full-width → tablet centered → desktop sidebar layout */}
+        <div className="mx-auto md:max-w-3xl lg:max-w-6xl xl:max-w-7xl px-5 md:px-8 lg:flex lg:gap-8 lg:min-h-screen">
 
-          {/* Streak + Stars row */}
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            <StreakCounter streak={currentStreak} />
-            <StarCounter totalStars={bonusStars} todayStars={todayBonusCompleted} />
-          </div>
-
-          {!noTasksToday && (
-            <>
-              {/* Notification banner */}
-              <div className="mt-3 animate-slide-down">
-                <NotificationBanner
-                  completedCount={completedCount}
-                  totalCount={totalActiveCount}
-                  allDone={allDailyDone}
-                />
-              </div>
-
-              {/* Progress bar */}
-              <div className="mt-4 text-white">
-                <ProgressBar completed={completedCount} total={totalActiveCount} />
-              </div>
-
-              {/* Unlocked banner if done */}
-              {allDailyDone && (
+          {/* ── Header (mobile/tablet) / Sidebar (desktop) ── */}
+          <header className="pt-6 pb-4 lg:w-80 xl:w-96 lg:shrink-0 lg:pt-10 lg:pb-10 lg:sticky lg:top-0 lg:self-start lg:max-h-screen lg:overflow-y-auto">
+            {/* Desktop sidebar glass card */}
+            <div className="lg:bg-white/10 lg:backdrop-blur-md lg:rounded-3xl lg:p-6 lg:shadow-xl lg:border lg:border-white/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-black text-white drop-shadow-md">
+                    Hey Caleb! 👋
+                  </h1>
+                  <p className="text-white/80 font-medium text-sm md:text-base lg:text-lg mt-1">
+                    {dayName}&apos;s Quests
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowCelebration(true)}
-                  className="mt-3 w-full py-3 bg-green-400/90 rounded-2xl text-center font-black text-white text-lg shadow-lg
-                    active:scale-95 transition-transform animate-pulse"
+                  onClick={onOpenParent}
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 flex items-center justify-center
+                    text-white/60 hover:bg-white/30 transition-colors text-sm md:text-base"
+                  title="Parent mode"
                 >
-                  🎮 Screen Time Unlocked! Tap to celebrate!
+                  ⚙️
                 </button>
+              </div>
+
+              {/* Streak + Stars row */}
+              <div className="flex items-center gap-2 mt-3 lg:mt-5 flex-wrap">
+                <StreakCounter streak={currentStreak} />
+                <StarCounter totalStars={bonusStars} todayStars={todayBonusCompleted} />
+              </div>
+
+              {!noTasksToday && (
+                <>
+                  {/* Notification banner */}
+                  <div className="mt-3 lg:mt-5 animate-slide-down">
+                    <NotificationBanner
+                      completedCount={completedCount}
+                      totalCount={totalActiveCount}
+                      allDone={allDailyDone}
+                    />
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mt-4 lg:mt-5 text-white">
+                    <ProgressBar completed={completedCount} total={totalActiveCount} />
+                  </div>
+
+                  {/* Unlocked banner if done */}
+                  {allDailyDone && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCelebration(true)}
+                      className="mt-3 lg:mt-5 w-full py-3 md:py-4 bg-green-400/90 rounded-2xl text-center font-black text-white
+                        text-lg md:text-xl shadow-lg active:scale-95 transition-transform animate-pulse"
+                    >
+                      🎮 Screen Time Unlocked! Tap to celebrate!
+                    </button>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </header>
+            </div>
+          </header>
 
-        {/* Tasks */}
-        <main className="px-5 pb-8">
-          {noTasksToday ? (
-            /* No tasks scheduled for today */
-            <section className="text-center py-12">
-              <div className="text-7xl mb-4">🎉</div>
-              <h2 className="text-2xl font-black text-white drop-shadow-md mb-2">
-                No Tasks Today!
-              </h2>
-              <p className="text-white/80 font-medium text-lg">
-                Enjoy your free day, Caleb! 🌟
-              </p>
-            </section>
-          ) : (
-            /* Today's scheduled tasks */
-            <section>
-              <h2 className="text-lg font-bold text-white/90 mb-3 flex items-center gap-2">
-                ⚔️ Today&apos;s Quests
-              </h2>
-              <div className="space-y-3">
-                {activeTodayTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    done={todayProgress.completedTaskIds.includes(task.id)}
-                    skipped={false}
-                    onToggle={() => onToggleTask(task.id)}
-                  />
-                ))}
-                {skippedTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    done={false}
-                    skipped={true}
-                    onToggle={() => {}}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+          {/* ── Tasks ── */}
+          <main className="pb-8 lg:flex-1 lg:pt-10 lg:pb-10">
+            {noTasksToday ? (
+              /* No tasks scheduled for today */
+              <section className="text-center py-12 md:py-16 lg:py-24">
+                <div className="text-7xl md:text-8xl lg:text-9xl mb-4 md:mb-6">🎉</div>
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-white drop-shadow-md mb-2">
+                  No Tasks Today!
+                </h2>
+                <p className="text-white/80 font-medium text-lg md:text-xl lg:text-2xl">
+                  Enjoy your free day, Caleb! 🌟
+                </p>
+              </section>
+            ) : (
+              /* Today's scheduled tasks */
+              <section>
+                <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-white/90 mb-3 md:mb-4 flex items-center gap-2">
+                  ⚔️ Today&apos;s Quests
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  {activeTodayTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      done={todayProgress.completedTaskIds.includes(task.id)}
+                      skipped={false}
+                      onToggle={() => onToggleTask(task.id)}
+                    />
+                  ))}
+                  {skippedTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      done={false}
+                      skipped={true}
+                      onToggle={() => {}}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {/* Bonus tasks — always available */}
-          {bonusTasks.length > 0 && (
-            <section className="mt-8">
-              <h2 className="text-lg font-bold text-white/90 mb-3 flex items-center gap-2">
-                ⭐ Bonus Challenges
-              </h2>
-              <div className="space-y-3">
-                {bonusTasks.map((task) => (
-                  <BonusTaskCard
-                    key={task.id}
-                    task={task}
-                    done={todayProgress.completedTaskIds.includes(task.id)}
-                    onToggle={() => onToggleTask(task.id)}
-                    onStarEarned={handleStarEarned}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-        </main>
+            {/* Bonus tasks — always available */}
+            {bonusTasks.length > 0 && (
+              <section className="mt-8 md:mt-10">
+                <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-white/90 mb-3 md:mb-4 flex items-center gap-2">
+                  ⭐ Bonus Challenges
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  {bonusTasks.map((task) => (
+                    <BonusTaskCard
+                      key={task.id}
+                      task={task}
+                      done={todayProgress.completedTaskIds.includes(task.id)}
+                      onToggle={() => onToggleTask(task.id)}
+                      onStarEarned={handleStarEarned}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </main>
+        </div>
       </div>
     </>
   );

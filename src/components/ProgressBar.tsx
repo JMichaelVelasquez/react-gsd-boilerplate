@@ -8,13 +8,13 @@ export default function ProgressBar({ completed, total }: Props) {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between text-sm font-bold mb-1">
+      <div className="flex justify-between text-sm md:text-base lg:text-lg font-bold mb-1">
         <span>
           {completed} / {total} done
         </span>
         <span>{pct}%</span>
       </div>
-      <div className="w-full h-5 bg-white/20 rounded-full overflow-hidden shadow-inner">
+      <div className="w-full h-5 md:h-6 lg:h-7 bg-white/20 rounded-full overflow-hidden shadow-inner">
         <div
           className="h-full rounded-full transition-all duration-700 ease-out"
           style={{
