@@ -11,25 +11,7 @@ export default function App() {
   const [showPinLogin, setShowPinLogin] = useState(false);
 
   if (view === 'parent') {
-    return (
-      <ParentView
-        tasks={store.state.tasks}
-        dailyTasks={store.dailyTasks}
-        weeklyTasks={store.weeklyTasks}
-        bonusTasks={store.bonusTasks}
-        currentWeek={store.state.currentWeek}
-        todayProgress={store.todayProgress}
-        weekHistory={store.state.weekHistory || []}
-        bonusStars={store.state.bonusStars || 0}
-        currentStreak={store.currentStreak}
-        onAddTask={store.addTask}
-        onEditTask={store.editTask}
-        onRemoveTask={store.removeTask}
-        onToggleSkip={store.toggleSkip}
-        onResetWeek={store.resetWeek}
-        onBack={() => setView('caleb')}
-      />
-    );
+    return <ParentView store={store} onBack={() => setView('caleb')} />;
   }
 
   return (
@@ -46,13 +28,10 @@ export default function App() {
       )}
 
       <CalebView
-        dailyTasks={store.dailyTasks}
-        activeDailyTasks={store.activeDailyTasks}
-        weeklyTasks={store.weeklyTasks}
-        activeWeeklyTasks={store.activeWeeklyTasks}
+        todayTasks={store.todayTasks}
+        activeTodayTasks={store.activeTodayTasks}
         bonusTasks={store.bonusTasks}
         todayProgress={store.todayProgress}
-        weeklyCompletedTaskIds={store.state.currentWeek.weeklyCompletedTaskIds || []}
         completedCount={store.completedCount}
         totalActiveCount={store.totalActiveCount}
         allDailyDone={store.allDailyDone}

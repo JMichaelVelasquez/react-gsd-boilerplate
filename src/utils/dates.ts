@@ -1,3 +1,5 @@
+import type { DayOfWeek } from '../types';
+
 /** Get today as YYYY-MM-DD in local time */
 export function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -28,4 +30,16 @@ export function weekDates(monday: string): string[] {
 /** Generate a simple unique id */
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+/** Get the day of week for a given Date object */
+export function getDayOfWeek(date: Date = new Date()): DayOfWeek {
+  const map: DayOfWeek[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  return map[date.getDay()];
+}
+
+/** Get the day of week from a YYYY-MM-DD string */
+export function dateToDayOfWeek(dateStr: string): DayOfWeek {
+  const date = new Date(dateStr + 'T00:00:00');
+  return getDayOfWeek(date);
 }
