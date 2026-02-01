@@ -7,7 +7,7 @@ import App from './App.tsx'
 // Bump this when a breaking change requires a fresh start.
 // If the stored version doesn't match, all localStorage is wiped
 // and the user goes through onboarding again.
-const APP_VERSION = 2;
+const APP_VERSION = 3;
 const STORED_VERSION = Number(localStorage.getItem('quest-app-version') || '0');
 
 if (STORED_VERSION < APP_VERSION) {
