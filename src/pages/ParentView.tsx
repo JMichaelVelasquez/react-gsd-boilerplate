@@ -4,6 +4,7 @@ import { ALL_DAYS, DAY_LABELS, DAY_FULL_LABELS } from '../types';
 import { DAY_NAMES, weekDates, todayStr, getDayOfWeek, dateToDayOfWeek } from '../utils/dates';
 import type { AppStore } from '../store/useAppStore';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { supabase } from '../lib/supabase';
 
 interface Props {
   store: AppStore;
@@ -679,7 +680,17 @@ export default function ParentView({ store, onBack, childName = 'Caleb' }: Props
             ← Back to {childName}
           </button>
           <h1 className="font-bold text-gray-800 md:text-lg">🔒 Parent Mode</h1>
-          <div className="w-20 md:w-28" />
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Sign out? You can sign back in anytime.')) {
+                supabase.auth.signOut();
+              }
+            }}
+            className="text-red-500 font-medium text-sm md:text-base hover:text-red-700 transition-colors"
+          >
+            Sign Out
+          </button>
         </div>
       </header>
 
