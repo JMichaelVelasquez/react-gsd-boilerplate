@@ -4,6 +4,7 @@ import { useAppStore } from './store/useAppStore';
 import CalebView from './pages/CalebView';
 import ParentView from './pages/ParentView';
 import PinLogin from './components/PinLogin';
+import SyncIndicator from './components/SyncIndicator';
 
 export default function App() {
   const store = useAppStore();
@@ -11,7 +12,12 @@ export default function App() {
   const [showPinLogin, setShowPinLogin] = useState(false);
 
   if (view === 'parent') {
-    return <ParentView store={store} onBack={() => setView('caleb')} />;
+    return (
+      <>
+        <ParentView store={store} onBack={() => setView('caleb')} />
+        <SyncIndicator status={store.syncStatus} />
+      </>
+    );
   }
 
   return (
@@ -41,6 +47,7 @@ export default function App() {
         onToggleTask={store.toggleTask}
         onOpenParent={() => setShowPinLogin(true)}
       />
+      <SyncIndicator status={store.syncStatus} />
     </>
   );
 }

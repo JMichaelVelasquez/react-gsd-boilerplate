@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { AppState, Task, DayProgress, WeekData, WeekHistory, DayOfWeek, WeeklySchedule, WeeklyTemplate } from '../types';
 import { ALL_DAYS } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useSupabaseSync } from '../hooks/useSupabaseSync';
 import { todayStr, getMonday, uid, weekDates, getDayOfWeek, dateToDayOfWeek } from '../utils/dates';
 
 // ── Default data ────────────────────────────────────────────────
@@ -152,6 +153,9 @@ function migrateState(raw: unknown): AppState {
 
 export function useAppStore() {
   const [state, setState] = useLocalStorage<AppState>('calebs-quest', INITIAL_STATE);
+
+  // Supabase sync — writes to cloud on every state change, listens for remote changes
+  const { syncStatus } = useSupabaseSync(state, setState);
 
   // Migrate + auto-reset stale week
   const ensuredState = useMemo(() => {
@@ -561,6 +565,7 @@ export function useAppStore() {
 
   return {
     state: ensuredState,
+    syncStatus,
     today,
     todayDow,
     todayProgress,
