@@ -3,6 +3,7 @@ import type { Task, DayOfWeek, WeeklyTemplate } from '../types';
 import { ALL_DAYS, DAY_LABELS, DAY_FULL_LABELS } from '../types';
 import { DAY_NAMES, weekDates, todayStr, getDayOfWeek, dateToDayOfWeek } from '../utils/dates';
 import type { AppStore } from '../store/useAppStore';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface Props {
   store: AppStore;
@@ -635,6 +636,22 @@ export default function ParentView({ store, onBack }: Props) {
   const [showCopyDay, setShowCopyDay] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: 'destructive';
+    onConfirm: () => void;
+  } | null>(null);
+
+  const requestConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    options?: { confirmLabel?: string; variant?: 'destructive' }
+  ) => {
+    setPendingAction({ title, message, onConfirm, ...options });
+  };
 
   const dayTasks = store.getTasksForDay(selectedDay);
   const unscheduledTasks = store.getUnscheduledTasksForDay(selectedDay);
@@ -751,13 +768,26 @@ export default function ParentView({ store, onBack }: Props) {
                         initial={{ title: editingTask.title, emoji: editingTask.emoji }}
                         submitLabel="Save Changes"
                         onSubmit={(title, emoji) => {
-                          store.editTask(task.id, { title, emoji });
-                          setEditingId(null);
+                          requestConfirm(
+                            'Save Changes',
+                            `Save changes to "${emoji} ${title}"?`,
+                            () => {
+                              store.editTask(task.id, { title, emoji });
+                              setEditingId(null);
+                            }
+                          );
                         }}
                         onCancel={() => setEditingId(null)}
                         onDelete={() => {
-                          store.removeTask(task.id);
-                          setEditingId(null);
+                          requestConfirm(
+                            'Delete Task',
+                            `Delete "${editingTask.emoji} ${editingTask.title}" from all days? This cannot be undone.`,
+                            () => {
+                              store.removeTask(task.id);
+                              setEditingId(null);
+                            },
+                            { confirmLabel: 'Delete', variant: 'destructive' }
+                          );
                         }}
                       />
                     ) : confirmDeleteId === task.id ? (
@@ -804,8 +834,15 @@ export default function ParentView({ store, onBack }: Props) {
                   <TaskForm
                     submitLabel={`Add to ${DAY_LABELS[selectedDay]}`}
                     onSubmit={(title, emoji) => {
-                      store.addTaskToDay(title, emoji, selectedDay);
-                      setShowAddForm(false);
+                      requestConfirm(
+                        'Add Task',
+                        `Add "${emoji} ${title}" to ${DAY_FULL_LABELS[selectedDay]}?`,
+                        () => {
+                          store.addTaskToDay(title, emoji, selectedDay);
+                          setShowAddForm(false);
+                        },
+                        { confirmLabel: 'Add Task' }
+                      );
                     }}
                     onCancel={() => setShowAddForm(false)}
                   />
@@ -823,7 +860,12 @@ export default function ParentView({ store, onBack }: Props) {
                           key={task.id}
                           type="button"
                           onClick={() => {
-                            store.addExistingTaskToDay(task.id, selectedDay);
+                            requestConfirm(
+                              'Add Task',
+                              `Add "${task.emoji} ${task.title}" to ${DAY_FULL_LABELS[selectedDay]}?`,
+                              () => store.addExistingTaskToDay(task.id, selectedDay),
+                              { confirmLabel: 'Add Task' }
+                            );
                           }}
                           className="inline-flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl border border-indigo-200
                             hover:border-indigo-400 hover:bg-indigo-100 transition-all text-sm font-medium text-gray-700"
@@ -848,8 +890,16 @@ export default function ParentView({ store, onBack }: Props) {
                   <CopyDayModal
                     fromDay={selectedDay}
                     onCopy={(toDays) => {
-                      store.copyDay(selectedDay, toDays);
-                      setShowCopyDay(false);
+                      const dayNames = toDays.map(d => DAY_FULL_LABELS[d]).join(', ');
+                      requestConfirm(
+                        'Copy Schedule',
+                        `Copy ${DAY_FULL_LABELS[selectedDay]}'s tasks to ${dayNames}?`,
+                        () => {
+                          store.copyDay(selectedDay, toDays);
+                          setShowCopyDay(false);
+                        },
+                        { confirmLabel: 'Copy' }
+                      );
                     }}
                     onClose={() => setShowCopyDay(false)}
                   />
@@ -923,8 +973,15 @@ export default function ParentView({ store, onBack }: Props) {
                   <TaskForm
                     submitLabel="Add Bonus Task"
                     onSubmit={(title, emoji) => {
-                      store.addBonusTask(title, emoji);
-                      setShowAddBonus(false);
+                      requestConfirm(
+                        'Add Bonus Task',
+                        `Add "${emoji} ${title}" as a bonus task?`,
+                        () => {
+                          store.addBonusTask(title, emoji);
+                          setShowAddBonus(false);
+                        },
+                        { confirmLabel: 'Add Bonus' }
+                      );
                     }}
                     onCancel={() => setShowAddBonus(false)}
                   />
@@ -944,13 +1001,26 @@ export default function ParentView({ store, onBack }: Props) {
                       initial={{ title: editingTask.title, emoji: editingTask.emoji }}
                       submitLabel="Save Changes"
                       onSubmit={(title, emoji) => {
-                        store.editTask(task.id, { title, emoji });
-                        setEditingId(null);
+                        requestConfirm(
+                          'Save Changes',
+                          `Save changes to "${emoji} ${title}"?`,
+                          () => {
+                            store.editTask(task.id, { title, emoji });
+                            setEditingId(null);
+                          }
+                        );
                       }}
                       onCancel={() => setEditingId(null)}
                       onDelete={() => {
-                        store.removeTask(task.id);
-                        setEditingId(null);
+                        requestConfirm(
+                          'Delete Bonus Task',
+                          `Delete "${editingTask.emoji} ${editingTask.title}"? This cannot be undone.`,
+                          () => {
+                            store.removeTask(task.id);
+                            setEditingId(null);
+                          },
+                          { confirmLabel: 'Delete', variant: 'destructive' }
+                        );
                       }}
                     />
                   ) : (
@@ -962,7 +1032,14 @@ export default function ParentView({ store, onBack }: Props) {
                         setShowAddForm(false);
                         setShowAddBonus(false);
                       }}
-                      onRemove={() => store.removeTask(task.id)}
+                      onRemove={() => {
+                        requestConfirm(
+                          'Remove Bonus Task',
+                          `Remove "${task.emoji} ${task.title}"? This cannot be undone.`,
+                          () => store.removeTask(task.id),
+                          { confirmLabel: 'Remove', variant: 'destructive' }
+                        );
+                      }}
                     />
                   ),
                 )}
@@ -975,9 +1052,24 @@ export default function ParentView({ store, onBack }: Props) {
               <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-5 shadow-sm">
                 <TemplatesSection
                   templates={store.state.templates || []}
-                  onSave={store.saveTemplate}
+                  onSave={(name) => {
+                    requestConfirm(
+                      'Save Template',
+                      `Save current weekly schedule as "${name}"?`,
+                      () => store.saveTemplate(name),
+                      { confirmLabel: 'Save Template' }
+                    );
+                  }}
                   onLoad={store.loadTemplate}
-                  onDelete={store.deleteTemplate}
+                  onDelete={(id) => {
+                    const template = (store.state.templates || []).find(t => t.id === id);
+                    requestConfirm(
+                      'Delete Template',
+                      `Delete template "${template?.name || 'this template'}"? This cannot be undone.`,
+                      () => store.deleteTemplate(id),
+                      { confirmLabel: 'Delete', variant: 'destructive' }
+                    );
+                  }}
                 />
               </div>
             </section>
@@ -1041,6 +1133,21 @@ export default function ParentView({ store, onBack }: Props) {
           )}
         </section>
       </main>
+
+      {/* Confirm Dialog */}
+      {pendingAction && (
+        <ConfirmDialog
+          title={pendingAction.title}
+          message={pendingAction.message}
+          confirmLabel={pendingAction.confirmLabel}
+          variant={pendingAction.variant}
+          onConfirm={() => {
+            pendingAction.onConfirm();
+            setPendingAction(null);
+          }}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
     </div>
   );
 }
