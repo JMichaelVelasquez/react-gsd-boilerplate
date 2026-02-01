@@ -151,15 +151,69 @@ function migrateState(raw: unknown): AppState {
 
 // ── Hook ────────────────────────────────────────────────────────
 
-export function useAppStore() {
-  const [state, setState] = useLocalStorage<AppState>('calebs-quest', INITIAL_STATE);
+export function useAppStore(childId?: string, initialPin?: string) {
+  // Use child-specific storage key if childId provided
+  const storageKey = childId ? `quest-${childId}` : 'calebs-quest';
+
+  const [state, setState] = useLocalStorage<AppState>(storageKey, INITIAL_STATE);
+
+  // Apply initial PIN from onboarding if available
+  const effectiveInitialState = useMemo(() => {
+    const migrated = migrateState(state);
+    if (initialPin && migrated.parentPin === '1234') {
+      return { ...migrated, parentPin: initialPin };
+    }
+    return migrated;
+  }, [state, initialPin]);
+
+  // Check for onboarding setup and apply initial tasks
+  useMemo(() => {
+    if (!childId) return;
+    try {
+      const setupRaw = localStorage.getItem('onboarding-setup');
+      if (!setupRaw) return;
+      const setup = JSON.parse(setupRaw);
+      if (setup.childId !== childId) return;
+
+      // Only apply if we still have default tasks (fresh setup)
+      const current = migrateState(state);
+      const hasOnlyDefaults = current.tasks.every(t =>
+        ['default-1', 'default-2', 'default-3'].includes(t.id)
+      );
+
+      if (hasOnlyDefaults && setup.tasks && setup.tasks.length > 0) {
+        const newTasks: Task[] = setup.tasks.map((t: { title: string; emoji: string }) => ({
+          id: uid(),
+          title: t.title,
+          emoji: t.emoji,
+          isBonus: false,
+          createdAt: new Date().toISOString(),
+        }));
+        const taskIds = newTasks.map(t => t.id);
+        const schedule: WeeklySchedule = {
+          mon: [...taskIds], tue: [...taskIds], wed: [...taskIds],
+          thu: [...taskIds], fri: [...taskIds], sat: [], sun: [],
+        };
+        setState(() => ({
+          ...current,
+          tasks: newTasks,
+          weeklySchedule: schedule,
+          parentPin: setup.pin || current.parentPin,
+        }));
+        localStorage.removeItem('onboarding-setup');
+      }
+    } catch {
+      // ignore
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [childId]);
 
   // Supabase sync — writes to cloud on every state change, listens for remote changes
-  const { syncStatus } = useSupabaseSync(state, setState);
+  const { syncStatus } = useSupabaseSync(state, setState, childId);
 
   // Migrate + auto-reset stale week
   const ensuredState = useMemo(() => {
-    const s = migrateState(state);
+    const s = childId ? effectiveInitialState : migrateState(state);
     const thisMonday = getMonday();
 
     if (s.currentWeek.weekStart !== thisMonday) {
@@ -211,12 +265,12 @@ export function useAppStore() {
         currentWeek: emptyWeek(thisMonday),
         weekHistory: [...(s.weekHistory || []), historyEntry],
       };
-      window.localStorage.setItem('calebs-quest', JSON.stringify(fresh));
+      window.localStorage.setItem(storageKey, JSON.stringify(fresh));
       return fresh;
     }
 
     return s;
-  }, [state]);
+  }, [state, effectiveInitialState, childId, storageKey]);
 
   const today = todayStr();
   const todayDow = getDayOfWeek();

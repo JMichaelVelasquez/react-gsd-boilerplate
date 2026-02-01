@@ -10,6 +10,8 @@ import StarCounter from '../components/StarCounter';
 import StarBurst from '../components/StarBurst';
 
 interface Props {
+  childName?: string;
+  childEmoji?: string;
   todayTasks: Task[];
   activeTodayTasks: Task[];
   bonusTasks: Task[];
@@ -25,6 +27,8 @@ interface Props {
 }
 
 export default function CalebView({
+  childName = 'Caleb',
+  childEmoji = '👋',
   todayTasks,
   activeTodayTasks,
   bonusTasks,
@@ -75,7 +79,7 @@ export default function CalebView({
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-black text-white drop-shadow-md">
-                    Hey Caleb! 👋
+                    Hey {childName}! {childEmoji}
                   </h1>
                   <p className="text-white/80 font-medium text-sm md:text-base lg:text-lg mt-1">
                     {dayName}&apos;s Quests
@@ -140,7 +144,7 @@ export default function CalebView({
                   No Tasks Today!
                 </h2>
                 <p className="text-white/80 font-medium text-lg md:text-xl lg:text-2xl">
-                  Enjoy your free day, Caleb! 🌟
+                  Enjoy your free day, {childName}! 🌟
                 </p>
               </section>
             ) : (

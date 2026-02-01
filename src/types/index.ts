@@ -67,3 +67,18 @@ export interface AppState {
 }
 
 export type ViewMode = 'caleb' | 'parent';
+
+export interface Profile {
+  id: string;
+  email: string;
+  displayName?: string;
+  pin: string;
+  createdAt: string;
+}
+
+export interface Child {
+  id: string;
+  name: string;
+  avatarEmoji: string;
+  createdAt: string;
+}

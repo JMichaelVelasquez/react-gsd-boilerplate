@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 interface Props {
   store: AppStore;
   onBack: () => void;
+  childName?: string;
 }
 
 // ── Emoji picker constant ───────────────────────────────────────
@@ -626,7 +627,7 @@ function HistoryView({ history, currentStreak }: { history: { weekStart: string;
 
 // ── Main Parent View ────────────────────────────────────────────
 
-export default function ParentView({ store, onBack }: Props) {
+export default function ParentView({ store, onBack, childName = 'Caleb' }: Props) {
   const todayDow = getDayOfWeek();
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(todayDow);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -675,7 +676,7 @@ export default function ParentView({ store, onBack }: Props) {
             onClick={onBack}
             className="text-purple-600 font-medium text-sm md:text-base hover:text-purple-800 transition-colors"
           >
-            ← Back to Caleb
+            ← Back to {childName}
           </button>
           <h1 className="font-bold text-gray-800 md:text-lg">🔒 Parent Mode</h1>
           <div className="w-20 md:w-28" />

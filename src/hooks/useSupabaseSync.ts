@@ -6,14 +6,14 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error';
 
-const HOUSEHOLD_ID = 'default';
+const DEFAULT_HOUSEHOLD_ID = 'default';
 
 // ── Helpers: convert between app types and DB rows ──────────────
 
-function taskToRow(task: Task) {
+function taskToRow(task: Task, householdId: string) {
   return {
     id: task.id,
-    household_id: HOUSEHOLD_ID,
+    household_id: householdId,
     title: task.title,
     emoji: task.emoji,
     is_bonus: task.isBonus,
@@ -36,24 +36,31 @@ function rowToTask(row: Record<string, unknown>): Task {
 export function useSupabaseSync(
   state: AppState,
   setState: (updater: (prev: AppState) => AppState) => void,
+  childId?: string,
 ) {
+  // Use childId as household_id if available, otherwise default
+  const householdId = childId || DEFAULT_HOUSEHOLD_ID;
+
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('syncing');
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isSyncingFromRemote = useRef(false);
   const lastPushTimestamp = useRef(0);
   const initialLoadDone = useRef(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const householdIdRef = useRef(householdId);
+  householdIdRef.current = householdId;
 
   // ── Pull: fetch full state from Supabase ──
 
   const pullFromSupabase = useCallback(async (): Promise<AppState | null> => {
+    const hid = householdIdRef.current;
     try {
       const [tasksRes, schedulesRes, progressRes, historyRes, appStateRes] = await Promise.all([
-        supabase.from('tasks').select('*').eq('household_id', HOUSEHOLD_ID),
-        supabase.from('weekly_schedules').select('*').eq('household_id', HOUSEHOLD_ID),
-        supabase.from('day_progress').select('*').eq('household_id', HOUSEHOLD_ID),
-        supabase.from('week_history').select('*').eq('household_id', HOUSEHOLD_ID),
-        supabase.from('app_state').select('*').eq('household_id', HOUSEHOLD_ID).single(),
+        supabase.from('tasks').select('*').eq('household_id', hid),
+        supabase.from('weekly_schedules').select('*').eq('household_id', hid),
+        supabase.from('day_progress').select('*').eq('household_id', hid),
+        supabase.from('week_history').select('*').eq('household_id', hid),
+        supabase.from('app_state').select('*').eq('household_id', hid).single(),
       ]);
 
       // If any critical query fails, return null
@@ -97,8 +104,8 @@ export function useSupabaseSync(
       }));
 
       // Get the household PIN
-      const householdRes = await supabase.from('households').select('pin').eq('id', HOUSEHOLD_ID).single();
-      const pin = (householdRes.data?.pin as string) || '1234';
+      const householdRes = await supabase.from('households').select('pin').eq('id', hid).single();
+      const pin = (householdRes.data?.pin as string) || state.parentPin || '1234';
 
       const pulled: AppState = {
         tasks,
@@ -118,11 +125,12 @@ export function useSupabaseSync(
       console.warn('[Sync] Pull error:', err);
       return null;
     }
-  }, [state.currentWeek.weekStart]);
+  }, [state.currentWeek.weekStart, state.parentPin]);
 
   // ── Push: write full state to Supabase ──
 
   const pushToSupabase = useCallback(async (appState: AppState) => {
+    const hid = householdIdRef.current;
     const now = Date.now();
     lastPushTimestamp.current = now;
 
@@ -131,19 +139,19 @@ export function useSupabaseSync(
 
       // 1. Upsert household (PIN)
       await supabase.from('households').upsert({
-        id: HOUSEHOLD_ID,
-        name: 'Default Household',
+        id: hid,
+        name: hid === DEFAULT_HOUSEHOLD_ID ? 'Default Household' : hid,
         pin: appState.parentPin,
       });
 
       // 2. Upsert tasks — delete removed ones, upsert current ones
-      const taskRows = appState.tasks.map(taskToRow);
+      const taskRows = appState.tasks.map(t => taskToRow(t, hid));
       const taskIds = appState.tasks.map((t) => t.id);
 
       // Delete tasks not in current state
       await supabase.from('tasks')
         .delete()
-        .eq('household_id', HOUSEHOLD_ID)
+        .eq('household_id', hid)
         .not('id', 'in', `(${taskIds.length > 0 ? taskIds.map((id) => `"${id}"`).join(',') : '"__none__"'})`);
 
       // Upsert current tasks
@@ -153,8 +161,8 @@ export function useSupabaseSync(
 
       // 3. Upsert weekly schedules
       const scheduleRows = ALL_DAYS.map((day) => ({
-        id: `${HOUSEHOLD_ID}-${day}`,
-        household_id: HOUSEHOLD_ID,
+        id: `${hid}-${day}`,
+        household_id: hid,
         day_of_week: day,
         task_ids: appState.weeklySchedule[day] || [],
       }));
@@ -162,8 +170,8 @@ export function useSupabaseSync(
 
       // 4. Upsert day progress for current week
       const dayRows = appState.currentWeek.days.map((d) => ({
-        id: `${HOUSEHOLD_ID}-${d.date}`,
-        household_id: HOUSEHOLD_ID,
+        id: `${hid}-${d.date}`,
+        household_id: hid,
         date: d.date,
         completed_task_ids: d.completedTaskIds,
         skipped_task_ids: d.skippedTaskIds,
@@ -174,8 +182,8 @@ export function useSupabaseSync(
 
       // 5. Upsert week history
       const historyRows = appState.weekHistory.map((h) => ({
-        id: `${HOUSEHOLD_ID}-${h.weekStart}`,
-        household_id: HOUSEHOLD_ID,
+        id: `${hid}-${h.weekStart}`,
+        household_id: hid,
         week_start: h.weekStart,
         completion_pct: h.completionPct,
         total_tasks: h.totalTasks,
@@ -188,8 +196,8 @@ export function useSupabaseSync(
 
       // 6. Upsert app state
       await supabase.from('app_state').upsert({
-        id: HOUSEHOLD_ID,
-        household_id: HOUSEHOLD_ID,
+        id: hid,
+        household_id: hid,
         bonus_stars: appState.bonusStars,
         templates: appState.templates,
         current_week_start: appState.currentWeek.weekStart,
@@ -245,26 +253,27 @@ export function useSupabaseSync(
   // ── Realtime subscriptions ──
 
   useEffect(() => {
+    const hid = householdIdRef.current;
     const channel = supabase
-      .channel('db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `household_id=eq.${HOUSEHOLD_ID}` }, () => {
+      .channel(`db-changes-${hid}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `household_id=eq.${hid}` }, () => {
         handleRemoteChange();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_schedules', filter: `household_id=eq.${HOUSEHOLD_ID}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_schedules', filter: `household_id=eq.${hid}` }, () => {
         handleRemoteChange();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'day_progress', filter: `household_id=eq.${HOUSEHOLD_ID}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'day_progress', filter: `household_id=eq.${hid}` }, () => {
         handleRemoteChange();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state', filter: `household_id=eq.${HOUSEHOLD_ID}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state', filter: `household_id=eq.${hid}` }, () => {
         handleRemoteChange();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'week_history', filter: `household_id=eq.${HOUSEHOLD_ID}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'week_history', filter: `household_id=eq.${hid}` }, () => {
         handleRemoteChange();
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[Sync] Realtime connected');
+          console.log('[Sync] Realtime connected for', hid);
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           setSyncStatus('offline');
         }
@@ -276,7 +285,7 @@ export function useSupabaseSync(
       channel.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [householdId]);
 
   // Debounced remote change handler — ignore changes we just pushed
   const remoteChangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

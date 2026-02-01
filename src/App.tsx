@@ -5,16 +5,22 @@ import CalebView from './pages/CalebView';
 import ParentView from './pages/ParentView';
 import PinLogin from './components/PinLogin';
 import SyncIndicator from './components/SyncIndicator';
+import AuthGate from './components/AuthGate';
 
-export default function App() {
-  const store = useAppStore();
+function AppContent({ childId, childName, childEmoji, parentPin }: {
+  childId: string;
+  childName: string;
+  childEmoji: string;
+  parentPin: string;
+}) {
+  const store = useAppStore(childId, parentPin);
   const [view, setView] = useState<ViewMode>('caleb');
   const [showPinLogin, setShowPinLogin] = useState(false);
 
   if (view === 'parent') {
     return (
       <>
-        <ParentView store={store} onBack={() => setView('caleb')} />
+        <ParentView store={store} onBack={() => setView('caleb')} childName={childName} />
         <SyncIndicator status={store.syncStatus} />
       </>
     );
@@ -34,6 +40,8 @@ export default function App() {
       )}
 
       <CalebView
+        childName={childName}
+        childEmoji={childEmoji}
         todayTasks={store.todayTasks}
         activeTodayTasks={store.activeTodayTasks}
         bonusTasks={store.bonusTasks}
@@ -49,5 +57,20 @@ export default function App() {
       />
       <SyncIndicator status={store.syncStatus} />
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthGate>
+      {({ child, pin }) => (
+        <AppContent
+          childId={child.id}
+          childName={child.name}
+          childEmoji={child.avatarEmoji}
+          parentPin={pin}
+        />
+      )}
+    </AuthGate>
   );
 }
